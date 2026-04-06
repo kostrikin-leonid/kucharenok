@@ -56,6 +56,7 @@ export function AiImportClient({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={uk.aiImport.placeholder}
+            className="min-h-[280px] border-[#cbd5e1] bg-white text-[15px] shadow-sm focus-visible:border-[var(--interactive)]"
           />
           <Button
             disabled={pending || !text.trim()}

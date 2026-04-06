@@ -87,7 +87,6 @@ export default async function DashboardPage() {
       title: true,
       slug: true,
       imageUrl: true,
-      totalTimeMinutes: true,
       kcalPerServing: true,
     },
   });
@@ -116,12 +115,12 @@ export default async function DashboardPage() {
         <p className="text-base capitalize text-[#4b5563] md:text-lg">
           {todayLong}
         </p>
-        <div className="flex flex-wrap gap-2 pt-2">
+        <div className="grid grid-cols-2 gap-2 pt-2 sm:flex sm:flex-wrap sm:gap-3">
           <Link
             href="/plan"
             className={cn(
               buttonVariants({ size: "lg" }),
-              "min-h-12 touch-manipulation px-6",
+              "min-h-[52px] w-full justify-center px-5 touch-manipulation sm:w-auto",
             )}
           >
             {uk.navShort.plan}
@@ -130,11 +129,33 @@ export default async function DashboardPage() {
             href="/shopping"
             className={cn(
               buttonVariants({ variant: "secondary", size: "lg" }),
-              "min-h-12 touch-manipulation px-6",
+              "min-h-[52px] w-full justify-center px-5 touch-manipulation sm:w-auto",
             )}
           >
             {uk.navShort.shopping}
           </Link>
+          {canManage ? (
+            <>
+              <Link
+                href="/recipes/new"
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "lg" }),
+                  "min-h-[52px] w-full justify-center px-5 touch-manipulation sm:w-auto",
+                )}
+              >
+                {uk.recipes.new}
+              </Link>
+              <Link
+                href="/recipes/import-ai"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "min-h-[52px] w-full justify-center border-2 border-[#001f3f] bg-white px-5 font-semibold text-[#001f3f] shadow-[var(--shadow-card)] hover:bg-[#f8fafc] hover:text-[#001f3f] active:translate-y-px sm:w-auto",
+                )}
+              >
+                {uk.recipes.newAi}
+              </Link>
+            </>
+          ) : null}
         </div>
       </section>
 
@@ -284,30 +305,11 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="hidden flex-wrap gap-2 md:flex">
-            <Link href="/recipes/new" className={cn(buttonVariants())}>
-              {uk.recipes.new}
-            </Link>
-            <Link
-              href="/recipes/import-ai"
-              className={cn(buttonVariants({ variant: "secondary" }))}
-            >
-              {uk.recipes.newAi}
-            </Link>
-            <Link
-              href="/plan"
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              {uk.nav.plan}
-            </Link>
-            <Link
-              href="/shopping"
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              {uk.nav.shopping}
-            </Link>
-            {canManage && recipeCount > 0 ? <DashboardDraftButton /> : null}
-          </div>
+          {canManage && recipeCount > 0 ? (
+            <div className="hidden md:flex">
+              <DashboardDraftButton className="min-h-[52px] px-6" />
+            </div>
+          ) : null}
         </div>
 
         <aside className="mt-10 space-y-8 lg:col-span-4 lg:mt-0">
@@ -351,12 +353,9 @@ export default async function DashboardPage() {
                           {r.title}
                         </p>
                         <p className="mt-1 text-xs text-[#6b7280]">
-                          {r.totalTimeMinutes != null
-                            ? `${r.totalTimeMinutes} ${uk.recipes.min}`
-                            : "—"}
                           {r.kcalPerServing != null
-                            ? ` · ${Math.round(r.kcalPerServing)} ${uk.dashboard.kcal}`
-                            : ""}
+                            ? `${Math.round(r.kcalPerServing)} ${uk.dashboard.kcal}`
+                            : "—"}
                         </p>
                       </div>
                     </Link>
@@ -368,10 +367,13 @@ export default async function DashboardPage() {
         </aside>
       </div>
 
-      <div className="flex flex-wrap gap-2 md:hidden">
+      <div className="grid grid-cols-2 gap-2 md:hidden">
         <Link
           href="/plan"
-          className={cn(buttonVariants({ size: "sm" }), "min-h-10")}
+          className={cn(
+            buttonVariants({ size: "sm" }),
+            "min-h-11 w-full justify-center",
+          )}
         >
           {uk.navShort.plan}
         </Link>
@@ -379,19 +381,35 @@ export default async function DashboardPage() {
           href="/shopping"
           className={cn(
             buttonVariants({ variant: "secondary", size: "sm" }),
-            "min-h-10",
+            "min-h-11 w-full justify-center",
           )}
         >
           {uk.navShort.shopping}
         </Link>
-        <Link
-          href="/recipes/new"
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "min-h-10")}
-        >
-          {uk.recipes.new}
-        </Link>
+        {canManage ? (
+          <>
+            <Link
+              href="/recipes/new"
+              className={cn(
+                buttonVariants({ variant: "secondary", size: "sm" }),
+                "min-h-11 w-full justify-center",
+              )}
+            >
+              {uk.recipes.new}
+            </Link>
+            <Link
+              href="/recipes/import-ai"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "min-h-11 w-full justify-center border-2 border-[#001f3f] bg-white font-semibold text-[#001f3f]",
+              )}
+            >
+              {uk.recipes.newAi}
+            </Link>
+          </>
+        ) : null}
         {canManage && recipeCount > 0 ? (
-          <DashboardDraftButton className="min-h-10 text-sm" />
+          <DashboardDraftButton className="col-span-2 min-h-11 w-full text-sm" />
         ) : null}
       </div>
     </div>

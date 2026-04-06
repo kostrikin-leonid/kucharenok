@@ -18,14 +18,11 @@ export function PlanWeekNav({
   offset,
   weekRangeLabel,
   basePath = "/plan",
-  showPreparations,
 }: {
   offset: number;
   weekRangeLabel: string;
   /** When not `/plan`, week query is only `?w=` (e.g. shopping). */
   basePath?: string;
-  /** Only used when `basePath` is `/plan`. */
-  showPreparations?: boolean;
 }) {
   const router = useRouter();
   const touchStartX = useRef<number | null>(null);
@@ -35,7 +32,7 @@ export function PlanWeekNav({
 
   const hrefFor = (o: number) => {
     if (basePath === "/plan") {
-      return planWeekPath(o, { showPreparations });
+      return planWeekPath(o);
     }
     const p = new URLSearchParams();
     if (o !== 0) p.set("w", String(o));

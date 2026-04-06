@@ -92,19 +92,6 @@ export function RecipeEditor({
   const [baseServings, setBaseServings] = useState(
     String(initial?.baseServings ?? 4),
   );
-  const [prep, setPrep] = useState(
-    initial?.prepTimeMinutes != null
-      ? String(initial.prepTimeMinutes)
-      : "",
-  );
-  const [cook, setCook] = useState(
-    initial?.cookTimeMinutes != null ? String(initial.cookTimeMinutes) : "",
-  );
-  const [total, setTotal] = useState(
-    initial?.totalTimeMinutes != null
-      ? String(initial.totalTimeMinutes)
-      : "",
-  );
   const [kcal, setKcal] = useState(
     initial?.kcalPerServing != null ? String(initial.kcalPerServing) : "",
   );
@@ -189,9 +176,9 @@ export function RecipeEditor({
       categoryId: categoryId || null,
       tagIds,
       baseServings: parseFloat(baseServings) || 4,
-      prepTimeMinutes: prep ? parseInt(prep, 10) : null,
-      cookTimeMinutes: cook ? parseInt(cook, 10) : null,
-      totalTimeMinutes: total ? parseInt(total, 10) : null,
+      prepTimeMinutes: null,
+      cookTimeMinutes: null,
+      totalTimeMinutes: null,
       difficulty: null,
       instructionSteps,
       kcalPerServing: kcal ? parseFloat(kcal) : null,
@@ -294,18 +281,6 @@ export function RecipeEditor({
             value={baseServings}
             onChange={(e) => setBaseServings(e.target.value)}
           />
-        </div>
-        <div className="space-y-2">
-          <Label>{uk.recipeEditor.prepMin}</Label>
-          <Input value={prep} onChange={(e) => setPrep(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>{uk.recipeEditor.cookMin}</Label>
-          <Input value={cook} onChange={(e) => setCook(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>{uk.recipeEditor.totalMin}</Label>
-          <Input value={total} onChange={(e) => setTotal(e.target.value)} />
         </div>
       </div>
 

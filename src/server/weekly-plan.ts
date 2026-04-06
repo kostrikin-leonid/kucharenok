@@ -15,7 +15,14 @@ export async function loadOrCreateWeeklyPlan(
     },
     include: {
       items: {
-        include: { recipe: { include: { category: true } } },
+        include: {
+          recipe: {
+            include: {
+              category: true,
+              recipeTags: { include: { tag: true } },
+            },
+          },
+        },
         orderBy: [{ date: "asc" }, { sortOrder: "asc" }],
       },
     },
@@ -31,7 +38,14 @@ export async function loadOrCreateWeeklyPlan(
       },
       include: {
         items: {
-          include: { recipe: { include: { category: true } } },
+          include: {
+          recipe: {
+            include: {
+              category: true,
+              recipeTags: { include: { tag: true } },
+            },
+          },
+        },
           orderBy: [{ date: "asc" }, { sortOrder: "asc" }],
         },
       },

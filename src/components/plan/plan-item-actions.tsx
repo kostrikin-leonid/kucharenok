@@ -9,55 +9,34 @@ import {
   replacePlanItemRecipeAction,
   updatePlanItemServingsAction,
 } from "@/actions/plan";
+import { PlanRecipePickerModal } from "@/components/plan/plan-recipe-picker-modal";
 import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { uk } from "@/lib/i18n/uk";
-import { cn } from "@/lib/utils";
-
-type Rec = { id: string; title: string };
+import type { PlanRecipePickerItem } from "@/types/plan-recipe-picker";
 
 export function PlanItemActions({
   itemId,
   servings,
   recipes,
-  currentRecipeId,
+  categories,
+  tags,
 }: {
   itemId: string;
   servings: number;
-  recipes: Rec[];
-  currentRecipeId: string;
+  recipes: PlanRecipePickerItem[];
+  categories: { slug: string; name: string }[];
+  tags: { slug: string; name: string }[];
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [replaceId, setReplaceId] = useState(
-    recipes.some((r) => r.id === currentRecipeId)
-      ? currentRecipeId
-      : (recipes[0]?.id ?? ""),
-  );
-
+  const [replaceOpen, setReplaceOpen] = useState(false);
   const [sv, setSv] = useState(String(servings));
   const [pending, start] = useTransition();
 
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       <Input
-        className="h-8 w-16 text-xs"
+        className="h-9 w-14 bg-white px-2 text-xs"
         value={sv}
         onChange={(e) => setSv(e.target.value)}
         onBlur={() => {
@@ -69,67 +48,32 @@ export function PlanItemActions({
           });
         }}
       />
-      <Dialog
-        open={open}
-        onOpenChange={(o) => {
-          setOpen(o);
-          if (o) {
-            setReplaceId(
-              recipes.some((r) => r.id === currentRecipeId)
-                ? currentRecipeId
-                : (recipes[0]?.id ?? ""),
-            );
-          }
-        }}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={pending}
+        onClick={() => setReplaceOpen(true)}
       >
-        <DialogTrigger
-          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-        >
-          {uk.plan.replace}
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{uk.plan.replaceTitle}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <Label>{uk.plan.recipeLabel}</Label>
-            <Select
-              value={replaceId}
-              onValueChange={(v) => setReplaceId(v ?? "")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={uk.common.choose}>
-                  {(v) => {
-                    const r = recipes.find((x) => x.id === v);
-                    return r?.title?.trim() || uk.common.unnamed;
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {recipes.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.title?.trim() || uk.common.unnamed}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              className="w-full"
-              disabled={pending}
-              onClick={() => {
-                start(async () => {
-                  await replacePlanItemRecipeAction(itemId, replaceId);
-                  toast.success(uk.plan.replaced);
-                  setOpen(false);
-                  router.refresh();
-                });
-              }}
-            >
-              {uk.common.save}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        {uk.plan.replace}
+      </Button>
+      <PlanRecipePickerModal
+        open={replaceOpen}
+        onOpenChange={setReplaceOpen}
+        recipes={recipes}
+        categories={categories}
+        tags={tags}
+        title={uk.plan.replaceTitle}
+        pending={pending}
+        onPick={(recipeId) => {
+          start(async () => {
+            await replacePlanItemRecipeAction(itemId, recipeId);
+            toast.success(uk.plan.replaced);
+            setReplaceOpen(false);
+            router.refresh();
+          });
+        }}
+      />
       <Button
         type="button"
         variant="ghost"

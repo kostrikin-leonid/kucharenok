@@ -89,7 +89,7 @@ export function RecipeImageFields({
         </span>
       </div>
       {showPreview ? (
-        <div className="relative mt-2 aspect-video max-h-52 w-full max-w-lg overflow-hidden rounded-xl border border-border/70 bg-muted/50 shadow-inner">
+        <div className="relative mt-2 aspect-square max-h-80 w-full max-w-sm overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-inner">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}

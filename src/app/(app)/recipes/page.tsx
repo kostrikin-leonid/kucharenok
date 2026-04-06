@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { HouseholdRole, Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
@@ -13,7 +12,7 @@ import {
   getLastUsedDate,
   getUsageCount,
 } from "@/lib/usage/recipe-usage";
-import { RecipeFavoriteStar } from "@/components/recipes/recipe-favorite-star";
+import { RecipeGridCard } from "@/components/recipes/recipe-grid-card";
 import { cn } from "@/lib/utils";
 
 type Search = {
@@ -22,7 +21,6 @@ type Search = {
   tag?: string;
   favorite?: string;
   preps?: string;
-  maxTime?: string;
 };
 
 function hasActiveRecipeFilters(sp: Search): boolean {
@@ -31,8 +29,7 @@ function hasActiveRecipeFilters(sp: Search): boolean {
       sp.category ||
       sp.tag ||
       sp.favorite === "1" ||
-      sp.preps === "1" ||
-      sp.maxTime,
+      sp.preps === "1",
   );
 }
 
@@ -71,20 +68,6 @@ export default async function RecipesPage({
   }
   if (sp.preps === "1") {
     where.isPreparation = true;
-  }
-  if (sp.maxTime) {
-    const t = parseInt(sp.maxTime, 10);
-    if (!Number.isNaN(t)) {
-      where.OR = [
-        { totalTimeMinutes: { lte: t } },
-        {
-          AND: [
-            { totalTimeMinutes: null },
-            { cookTimeMinutes: { lte: t } },
-          ],
-        },
-      ];
-    }
   }
 
   const recipes = await prisma.recipe.findMany({
@@ -171,13 +154,13 @@ export default async function RecipesPage({
           name="q"
           placeholder={uk.recipes.searchTitlePlaceholder}
           defaultValue={sp.q}
-          className="min-h-12 min-w-0 rounded-xl border border-[#e2e8f0] bg-card px-4 py-2.5 text-[16px] text-[#001f3f] placeholder:text-[#94a3b8] md:min-w-[11rem] md:flex-1 md:text-sm"
+          className="min-h-12 min-w-0 rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-[16px] text-[#001f3f] shadow-sm placeholder:text-[#94a3b8] focus-visible:border-[var(--interactive)] focus-visible:ring-3 focus-visible:ring-[var(--interactive)]/25 md:min-w-[11rem] md:flex-1 md:text-sm"
         />
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 md:flex md:flex-wrap md:items-end md:gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:flex md:flex-wrap md:items-end md:gap-2">
           <select
             name="category"
             defaultValue={sp.category ?? ""}
-            className="min-h-11 w-full rounded-xl border border-[#e2e8f0] bg-card px-3 py-2 text-[15px] text-[#001f3f] md:min-w-[8.5rem] md:text-sm"
+            className="min-h-11 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-[15px] text-[#001f3f] shadow-sm md:min-w-[8.5rem] md:text-sm"
           >
             <option value="">{uk.recipes.allCategories}</option>
             {categories.map((c) => (
@@ -189,7 +172,7 @@ export default async function RecipesPage({
           <select
             name="tag"
             defaultValue={sp.tag ?? ""}
-            className="min-h-11 w-full rounded-xl border border-[#e2e8f0] bg-card px-3 py-2 text-[15px] text-[#001f3f] md:min-w-[8.5rem] md:text-sm"
+            className="min-h-11 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2 text-[15px] text-[#001f3f] shadow-sm md:min-w-[8.5rem] md:text-sm"
           >
             <option value="">{uk.recipes.allTags}</option>
             {tags.map((t) => (
@@ -197,16 +180,6 @@ export default async function RecipesPage({
                 {t.name?.trim() || uk.common.unnamed}
               </option>
             ))}
-          </select>
-          <select
-            name="maxTime"
-            defaultValue={sp.maxTime ?? ""}
-            className="min-h-11 w-full rounded-xl border border-[#e2e8f0] bg-card px-3 py-2 text-[15px] text-[#001f3f] md:min-w-[9rem] md:text-sm"
-          >
-            <option value="">{uk.recipes.anyCookTime}</option>
-            <option value="20">{uk.recipes.maxTime20}</option>
-            <option value="45">{uk.recipes.maxTime45}</option>
-            <option value="90">{uk.recipes.maxTime90}</option>
           </select>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:contents">
@@ -242,7 +215,7 @@ export default async function RecipesPage({
         </button>
       </form>
 
-      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
         {recipesSorted.map((r) => {
           const u = usageById[r.id];
           const cnt = u?.cnt ?? 0;
@@ -251,50 +224,21 @@ export default async function RecipesPage({
               ? uk.recipes.daysAgoShort(u.daysAgo)
               : uk.recipes.neverInPlan;
           return (
-            <Card
+            <RecipeGridCard
               key={r.id}
-              className="h-full border-[#f1f5f9] transition-[border-color,box-shadow] duration-150 hover:border-[#e2e8f0] md:hover:shadow-sm"
-            >
-              <CardContent className="flex gap-2 p-3 md:gap-3 md:p-5">
-                <RecipeFavoriteStar
-                  recipeId={r.id}
-                  isFavorite={r.isFavorite}
-                />
-                <Link
-                  href={`/recipes/${r.slug}`}
-                  className="min-w-0 flex-1 touch-manipulation transition-transform duration-150 active:scale-[0.99] md:active:scale-100"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-start gap-2">
-                      <h2 className="min-w-0 flex-1 text-[15px] font-semibold leading-snug text-[#001f3f] md:text-base">
-                        {r.title}
-                      </h2>
-                      {r.isPreparation ? (
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 text-[10px] font-semibold"
-                        >
-                          {uk.recipes.preparationBadge}
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="text-[12px] leading-relaxed text-[#64748b]">
-                      {r.category?.name ?? uk.recipes.uncategorized} ·{" "}
-                      {uk.recipes.servings}: {r.baseServings}
-                      {r.totalTimeMinutes != null
-                        ? ` · ${r.totalTimeMinutes} ${uk.recipes.min}`
-                        : ""}
-                      {r.kcalPerServing != null
-                        ? ` · ~${Math.round(r.kcalPerServing)} ${uk.dashboard.kcal}`
-                        : ""}
-                    </p>
-                    <p className="text-[11px] text-[#94a3b8]">
-                      {uk.recipes.lastInPlanLine(lastLabel, cnt)}
-                    </p>
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
+              recipeId={r.id}
+              slug={r.slug}
+              title={r.title}
+              imageUrl={r.imageUrl}
+              categoryName={r.category?.name ?? null}
+              baseServings={r.baseServings}
+              kcalPerServing={r.kcalPerServing}
+              isPreparation={r.isPreparation}
+              isFavorite={r.isFavorite}
+              lastInPlanLabel={lastLabel}
+              usageCount30={cnt}
+              className="h-full transition-[border-color,box-shadow,transform] duration-150 hover:z-[1] hover:border-[#dce3ec] hover:shadow-[0_6px_16px_rgba(0,31,63,0.08)] hover:scale-[1.02]"
+            />
           );
         })}
       </div>

@@ -12,6 +12,7 @@ import {
   startOfWeekMonday,
   toDateOnly,
   toDateOnlyUtc,
+  weeklyPlanItemDate,
 } from "@/lib/week";
 import { revertActivePlanToDraftAndClearShopping } from "@/lib/plan/revert-active-plan";
 import { loadOrCreateWeeklyPlan } from "@/server/weekly-plan";
@@ -31,13 +32,31 @@ export async function getOrCreateWeeklyPlan(weekStart?: Date) {
   );
 }
 
-const slotSchema = z.object({
-  date: z.coerce.date(),
-  mealType: z.nativeEnum(MealType),
-  recipeId: z.string(),
-  servings: z.coerce.number().positive(),
-  note: z.string().optional().nullable(),
-});
+const slotSchema = z
+  .object({
+    mealType: z.nativeEnum(MealType),
+    recipeId: z.string(),
+    servings: z.coerce.number().positive(),
+    note: z.string().optional().nullable(),
+    /** Точне посилання на тиждень зі сторінки плану (уникає іншого рядка в БД після ISO-дат). */
+    weeklyPlanId: z.string().optional(),
+    /** Надійніше за `date` з клієнта (серіалізація RSC / часові пояси). */
+    weekStartIso: z.string().optional(),
+    dayOffset: z.number().int().min(0).max(6).optional(),
+    date: z.coerce.date().optional(),
+  })
+  .refine(
+    (d) => {
+      const hasPlanId = Boolean(d.weeklyPlanId?.trim());
+      const hasWeek =
+        Boolean(d.weekStartIso?.trim()) && d.dayOffset != null;
+      const hasLegacyDate = d.date != null;
+      return (
+        (hasPlanId && d.dayOffset != null) || hasWeek || hasLegacyDate
+      );
+    },
+    { message: "weeklyPlanId+dayOffset, weekStartIso+dayOffset, or date required" },
+  );
 
 export async function addPlanItemAction(input: z.infer<typeof slotSchema>) {
   const ctx = await requireManager();
@@ -46,25 +65,46 @@ export async function addPlanItemAction(input: z.infer<typeof slotSchema>) {
     where: { id: data.recipeId, householdId: ctx.householdId },
   });
   if (!recipe) throw new Error(serverErrorUk.recipeNotFound);
-  const plan = await getOrCreateWeeklyPlan(startOfWeekMonday(data.date));
+
+  let itemDate: Date;
+  let planAnchor: Date;
+  /** Той самий `WeeklyPlan`, що на екрані (критично для weeklyPlanId). */
+  let plan: { id: string; weekStartDate: Date };
+
+  if (data.weeklyPlanId?.trim() && data.dayOffset != null) {
+    const row = await prisma.weeklyPlan.findFirst({
+      where: { id: data.weeklyPlanId.trim(), householdId: ctx.householdId },
+    });
+    if (!row) throw new Error(serverErrorUk.notFound);
+    itemDate = weeklyPlanItemDate(row.weekStartDate, data.dayOffset);
+    plan = row;
+  } else if (data.weekStartIso?.trim() && data.dayOffset != null) {
+    planAnchor = toDateOnly(new Date(data.weekStartIso.trim()));
+    plan = await getOrCreateWeeklyPlan(planAnchor);
+    itemDate = weeklyPlanItemDate(plan.weekStartDate, data.dayOffset);
+  } else {
+    const d = data.date!;
+    planAnchor = startOfWeekMonday(d);
+    itemDate = toDateOnly(d);
+    plan = await getOrCreateWeeklyPlan(planAnchor);
+  }
   await revertToDraftIfSaved(plan.id);
-  const maxSort = await prisma.weeklyPlanItem.aggregate({
+  await prisma.weeklyPlanItem.deleteMany({
     where: {
       weeklyPlanId: plan.id,
-      date: toDateOnly(data.date),
+      date: itemDate,
       mealType: data.mealType,
     },
-    _max: { sortOrder: true },
   });
   await prisma.weeklyPlanItem.create({
     data: {
       weeklyPlanId: plan.id,
-      date: toDateOnly(data.date),
+      date: itemDate,
       mealType: data.mealType,
       recipeId: data.recipeId,
       servings: data.servings,
       note: data.note,
-      sortOrder: (maxSort._max.sortOrder ?? -1) + 1,
+      sortOrder: 0,
     },
   });
   await syncUsageLogsForPlan(plan.id);

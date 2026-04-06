@@ -38,7 +38,7 @@ import {
   mealTypeLabelUk,
 } from "@/lib/i18n/meals";
 import { scaleIngredients, formatQuantityDisplay } from "@/lib/recipes/scaling";
-import { addDays, startOfWeekMonday, toDateOnly } from "@/lib/week";
+import { startOfWeekMonday } from "@/lib/week";
 import { cn } from "@/lib/utils";
 
 type Ing = {
@@ -70,9 +70,6 @@ export function RecipeDetail({
     summary: string | null;
     imageUrl: string | null;
     baseServings: number;
-    prepTimeMinutes: number | null;
-    cookTimeMinutes: number | null;
-    totalTimeMinutes: number | null;
     kcalPerServing: number | null;
     proteinPerServing: number | null;
     fatPerServing: number | null;
@@ -136,10 +133,10 @@ export function RecipeDetail({
           <img
             src={hero}
             alt=""
-            className="max-h-72 w-full object-cover"
+            className="aspect-square max-h-[min(420px,88vw)] w-full object-cover"
           />
         ) : (
-          <div className="flex aspect-[2.2/1] max-h-56 items-center justify-center bg-[#f0f4f8]">
+          <div className="flex aspect-square max-h-[min(420px,88vw)] w-full items-center justify-center bg-[#f0f4f8]">
             <span className="text-sm font-medium text-muted-foreground">
               {uk.recipeImage.placeholder}
             </span>
@@ -302,19 +299,6 @@ export function RecipeDetail({
               <li key={i}>{s}</li>
             ))}
           </ol>
-          <div className="mt-4 text-xs text-muted-foreground">
-            {uk.recipes.timesLine(
-              recipe.prepTimeMinutes != null
-                ? String(recipe.prepTimeMinutes)
-                : "—",
-              recipe.cookTimeMinutes != null
-                ? String(recipe.cookTimeMinutes)
-                : "—",
-              recipe.totalTimeMinutes != null
-                ? String(recipe.totalTimeMinutes)
-                : "—",
-            )}
-          </div>
         </section>
       </div>
 
@@ -353,7 +337,6 @@ function AddToPlanDialog({ recipeId }: { recipeId: string }) {
   const [servings, setServings] = useState(4);
   const [pending, start] = useTransition();
   const weekStart = startOfWeekMonday();
-  const date = addDays(weekStart, dayIndex);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -429,7 +412,8 @@ function AddToPlanDialog({ recipeId }: { recipeId: string }) {
             onClick={() => {
               start(async () => {
                 await addPlanItemAction({
-                  date: toDateOnly(date),
+                  weekStartIso: weekStart.toISOString(),
+                  dayOffset: dayIndex,
                   mealType: meal,
                   recipeId,
                   servings,

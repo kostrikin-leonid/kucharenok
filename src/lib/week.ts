@@ -33,6 +33,37 @@ export function addDays(d: Date, n: number): Date {
   return x;
 }
 
+/**
+ * Дата страви в тижневому плані (Prisma `@db.Date`).
+ * Лічиль лише UTC Y/M/D, щоб збігалося з тим, що повертається з БД після збереження
+ * (інакше `getTime()` не збігається з `toDateOnly(addDays(...))` у не-UTC TZ).
+ */
+export function weeklyPlanItemDate(
+  weekStartDate: Date,
+  dayOffset: number,
+): Date {
+  return new Date(
+    Date.UTC(
+      weekStartDate.getUTCFullYear(),
+      weekStartDate.getUTCMonth(),
+      weekStartDate.getUTCDate() + dayOffset,
+      0,
+      0,
+      0,
+      0,
+    ),
+  );
+}
+
+/** Один календарний день для значень `@db.Date` (порівняння UTC-компонентів). */
+export function isSameUtcDateOnly(a: Date, b: Date): boolean {
+  return (
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
+  );
+}
+
 /** Понеділок поточного тижня + offset×7 днів (0 = цей тиждень, 1 = наступний …). */
 export const PLAN_WEEK_OFFSET_MIN = 0;
 export const PLAN_WEEK_OFFSET_MAX = 4;
