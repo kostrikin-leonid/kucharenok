@@ -43,3 +43,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# User-uploaded recipe images (keep folder)
+/public/uploads/recipes/*
+!/public/uploads/recipes/.gitkeep
